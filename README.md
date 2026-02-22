@@ -282,7 +282,7 @@ http://localhost:8080
 
 ### Create Cart-Wise Coupon
 
-curl -X POST http://localhost:8080/coupons \
+curl -X POST http://localhost:8080/coupons/create \
 -H "Content-Type: application/json" \
 -d '{
 "type":"CART_WISE",
@@ -293,7 +293,7 @@ curl -X POST http://localhost:8080/coupons \
 
 ### Create Product-Wise Coupon
 
-curl -X POST http://localhost:8080/coupons \
+curl -X POST http://localhost:8080/coupons/fetchAll \
 -H "Content-Type: application/json" \
 -d '{
 "type":"PRODUCT_WISE",
@@ -333,7 +333,7 @@ curl -X DELETE http://localhost:8080/coupons/1
 
 ### Get Applicable Coupons
 
-curl -X POST http://localhost:8080/coupons/applicable-coupons \
+curl -X POST http://localhost:8080/coupons/applicableCoupons \
 -H "Content-Type: application/json" \
 -d '{
 "items":[{"productId":1,"quantity":3,"price":50}]
@@ -343,7 +343,7 @@ curl -X POST http://localhost:8080/coupons/applicable-coupons \
 
 ### Apply Coupon
 
-curl -X POST http://localhost:8080/coupons/apply-coupon/1 \
+curl -X POST http://localhost:8080/coupons/applyCoupon/1 \
 -H "Content-Type: application/json" \
 -d '{
 "items":[{"productId":1,"quantity":3,"price":50}]
