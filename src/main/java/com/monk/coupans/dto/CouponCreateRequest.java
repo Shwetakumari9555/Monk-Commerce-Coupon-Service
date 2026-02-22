@@ -14,6 +14,5 @@ public class CouponCreateRequest {
 
     private String type;
     private LocalDateTime expiryDate;
-    private Integer usageLimit;
     private Map<String, Object> details;
 }

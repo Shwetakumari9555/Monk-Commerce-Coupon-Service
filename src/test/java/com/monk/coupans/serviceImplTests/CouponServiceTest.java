@@ -13,6 +13,9 @@ import com.monk.coupans.repository.ProductCouponRepository;
 import com.monk.coupans.serviceImpl.CouponServiceImpl;
 import com.monk.coupans.strategy.CouponStrategy;
 import com.monk.coupans.strategy.StrategyFactory;
+import com.monk.coupans.wrapperDto.ApplicableCouponResponseWrapper;
+import com.monk.coupans.wrapperDto.CartRequestWrapper;
+import com.monk.coupans.wrapperDto.CartResponseWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -58,7 +61,7 @@ class CouponServiceTest {
     void shouldCreateCartWiseCouponSuccessfully() {
 
         CouponCreateRequest request = new CouponCreateRequest();
-        request.setType("CART_WISE");
+        request.setType(String.valueOf(CouponType.CART_WISE));
 
         Map<String,Object> details = new HashMap<>();
         details.put("threshold", 100);
@@ -67,10 +70,12 @@ class CouponServiceTest {
 
         Coupon saved = new Coupon();
         saved.setId(1L);
+        saved.setType(CouponType.CART_WISE);
+
 
         when(couponRepo.save(any())).thenReturn(saved);
 
-        Coupon result = service.createCouponFromRequest(request);
+        CouponResponse result = service.createCouponFromRequest(request);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -83,7 +88,7 @@ class CouponServiceTest {
     void shouldCreateProductWiseCouponSuccessfully() {
 
         CouponCreateRequest request = new CouponCreateRequest();
-        request.setType("PRODUCT_WISE");
+        request.setType(String.valueOf(CouponType.PRODUCT_WISE));
 
         Map<String,Object> details = new HashMap<>();
         details.put("product_id", 5L);
@@ -92,10 +97,11 @@ class CouponServiceTest {
 
         Coupon saved = new Coupon();
         saved.setId(2L);
+        saved.setType(CouponType.PRODUCT_WISE);
 
         when(couponRepo.save(any())).thenReturn(saved);
 
-        Coupon result = service.createCouponFromRequest(request);
+        CouponResponse result = service.createCouponFromRequest(request);
 
         assertEquals(2L, result.getId());
         verify(productRepo).save(any(ProductCoupon.class));
@@ -108,7 +114,6 @@ class CouponServiceTest {
         Coupon coupon = new Coupon();
         coupon.setId(1L);
         coupon.setType(CouponType.CART_WISE);
-        coupon.setUsageLimit(5);
         coupon.setExpiryDate(LocalDateTime.now().plusDays(2));
 
         when(couponRepo.findById(1L)).thenReturn(Optional.of(coupon));
@@ -118,13 +123,12 @@ class CouponServiceTest {
 
         CartItem item = new CartItem(1L,2,100);
         CartRequest cart = new CartRequest(List.of(item));
+        CartRequestWrapper wrapper = new CartRequestWrapper(cart);
 
-        CartResponse response = service.applyCoupon(1L, cart);
+        CartResponseWrapper response = service.applyCoupon(1L, wrapper);
 
-        assertEquals(50.0, response.getDiscount());
-        assertEquals(150.0, response.getFinalPrice());
-
-        verify(couponRepo).save(coupon);
+        assertEquals(50.0, response.getResponse().getDiscount());
+        assertEquals(150.0, response.getResponse().getFinalPrice());
     }
 
 
@@ -138,23 +142,9 @@ class CouponServiceTest {
         when(couponRepo.findById(1L)).thenReturn(Optional.of(coupon));
 
         assertThrows(InvalidCouponException.class,
-                () -> service.applyCoupon(1L, new CartRequest()));
+                () -> service.applyCoupon(1L, new CartRequestWrapper()));
     }
 
-
-    @Test
-    void shouldThrowExceptionIfUsageLimitExceeded() {
-
-        Coupon coupon = new Coupon();
-        coupon.setId(1L);
-        coupon.setUsageLimit(0);
-        coupon.setExpiryDate(LocalDateTime.now().plusDays(5));
-
-        when(couponRepo.findById(1L)).thenReturn(Optional.of(coupon));
-
-        assertThrows(InvalidCouponException.class,
-                () -> service.applyCoupon(1L, new CartRequest()));
-    }
 
 
     @Test
@@ -172,10 +162,11 @@ class CouponServiceTest {
 
         CartItem item = new CartItem(1L,1,100);
         CartRequest cart = new CartRequest(List.of(item));
+        CartRequestWrapper wrapper = new CartRequestWrapper(cart);
 
-        List<DiscountResponse> result = service.applicableCoupons(cart);
+        ApplicableCouponResponseWrapper result = service.applicableCoupons(wrapper);
 
-        assertEquals(1, result.size());
-        assertEquals(25.0, result.get(0).getDiscount());
+        assertEquals(1, result.getApplicableCouponResponses().size());
+        assertEquals(25.0, result.getApplicableCouponResponses().get(0).getDiscount());
     }
 }

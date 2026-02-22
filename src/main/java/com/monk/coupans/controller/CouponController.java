@@ -1,8 +1,10 @@
 package com.monk.coupans.controller;
 
 import com.monk.coupans.dto.*;
-import com.monk.coupans.entity.Coupon;
 import com.monk.coupans.service.CouponService;
+import com.monk.coupans.wrapperDto.ApplicableCouponResponseWrapper;
+import com.monk.coupans.wrapperDto.CartRequestWrapper;
+import com.monk.coupans.wrapperDto.CartResponseWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -22,7 +24,7 @@ public class CouponController {
      * Creates a new coupon based on request details.
      */
     @PostMapping("/create")
-    public Coupon create(@RequestBody CouponCreateRequest request) {
+    public CouponResponse create(@RequestBody CouponCreateRequest request) {
         return service.createCouponFromRequest(request);
     }
 
@@ -61,16 +63,16 @@ public class CouponController {
     /*
      * Returns all coupons applicable to a given cart.
      */
-    @PostMapping("/applicableCoupons")
-    public List<DiscountResponse> applicable(@RequestBody CartRequest cart) {
+    @PostMapping("/applicable-coupons")
+    public ApplicableCouponResponseWrapper applicable(@RequestBody CartRequestWrapper cart) {
         return service.applicableCoupons(cart);
     }
 
     /*
      * Applies a specific coupon to the cart and returns the updated cart details.
      */
-    @PostMapping("/applyCoupon/{id}")
-    public CartResponse apply(@PathVariable Long id, @RequestBody CartRequest cart) {
+    @PostMapping("/apply-coupon/{id}")
+    public CartResponseWrapper apply(@PathVariable Long id, @RequestBody CartRequestWrapper cart) {
         return service.applyCoupon(id, cart);
     }
 }

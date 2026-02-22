@@ -35,9 +35,8 @@ public class Coupon {
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
 
-    // Number of times this coupon can be used
-    @Column(name = "usage_limit")
-    private Integer usageLimit;
+    @Column(name="usage_Count", nullable = false)
+    private Integer usageCount;
 
     // Used for optimistic locking to prevent race conditions
     @Version
@@ -46,7 +45,6 @@ public class Coupon {
     /*
      * Automatically sets default values before saving.
      * If expiry date is not provided → defaults to 1 month.
-     * If usage limit is not provided → defaults to 20 uses.
      */
     @PrePersist
     public void setDefaults() {
@@ -55,10 +53,7 @@ public class Coupon {
         if (this.expiryDate == null) {
             this.expiryDate = LocalDateTime.now().plusMonths(1);
         }
-
-        // Default usage limit = 20 uses
-        if (this.usageLimit == null) {
-            this.usageLimit = 20;
-        }
+        //default usage count = 0
+        this.usageCount = 0;
     }
 }

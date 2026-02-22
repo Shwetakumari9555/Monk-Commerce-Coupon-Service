@@ -5,12 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartRequest {
+public class CartItemResponse {
 
-    private List<CartItem> items;
+   @JsonProperty("product_id")
+   private Long productId;
+
+   private int quantity;
+
+   private double price;
+
+   @JsonProperty("total_discount")
+   private double totalDiscount;
 }

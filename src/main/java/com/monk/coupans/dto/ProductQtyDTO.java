@@ -1,16 +1,13 @@
 package com.monk.coupans.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartRequest {
-
-    private List<CartItem> items;
+public class ProductQtyDTO {
+    private Long productId;
+    private int quantity;
 }

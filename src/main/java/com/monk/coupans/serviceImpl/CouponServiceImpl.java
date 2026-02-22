@@ -11,6 +11,9 @@ import com.monk.coupans.repository.ProductCouponRepository;
 import com.monk.coupans.service.CouponService;
 import com.monk.coupans.strategy.CouponStrategy;
 import com.monk.coupans.strategy.StrategyFactory;
+import com.monk.coupans.wrapperDto.ApplicableCouponResponseWrapper;
+import com.monk.coupans.wrapperDto.CartRequestWrapper;
+import com.monk.coupans.wrapperDto.CartResponseWrapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,17 +49,22 @@ public class CouponServiceImpl implements CouponService {
      * Validates input and prevents duplicate coupons.
      */
     @Override
-    public Coupon createCouponFromRequest(CouponCreateRequest request) {
+    public CouponResponse createCouponFromRequest(CouponCreateRequest request) {
 
         CouponType type = CouponType.valueOf(request.getType().toUpperCase());
 
         Coupon coupon = new Coupon();
         coupon.setType(type);
         coupon.setExpiryDate(request.getExpiryDate());
-        coupon.setUsageLimit(request.getUsageLimit());
         coupon = couponRepo.save(coupon);
 
         Map<String, Object> details = request.getDetails();
+
+        CouponResponse response = new CouponResponse();
+        response.setId(coupon.getId());
+        response.setType(coupon.getType().name());
+        response.setExpiryDate(coupon.getExpiryDate());
+
 
         switch (type) {
 
@@ -73,6 +81,9 @@ public class CouponServiceImpl implements CouponService {
                 cc.setThreshold(threshold);
                 cc.setDiscount(discount);
                 cartRepo.save(cc);
+
+                response.setThreshold(threshold);
+                response.setDiscount(discount);
             }
 
             case PRODUCT_WISE -> {
@@ -88,21 +99,85 @@ public class CouponServiceImpl implements CouponService {
                 pc.setProductId(productId);
                 pc.setDiscount(discount);
                 productRepo.save(pc);
+
+                response.setProductId(productId);
+                response.setDiscount(discount);
             }
 
             case BXGY -> {
                 int repetitionLimit = Integer.parseInt(details.get("repition_limit").toString());
-                if(bxgyRepo.existsByRepetitionLimit(repetitionLimit)){
-                    throw new InvalidCouponException("Duplicate BXGY coupon");
+
+                List<Map<String, Object>> buyList =
+                        (List<Map<String, Object>>) details.get("buy_products");
+
+                List<Map<String, Object>> getList =
+                        (List<Map<String, Object>>) details.get("get_products");
+
+                List<BxGyCoupon> candidates =
+                        bxgyRepo.findByLimitWithProducts(repetitionLimit);
+
+
+                for (BxGyCoupon existing : candidates) {
+
+                    boolean buyMatch = compareBuyProducts(existing.getBuyProducts(), buyList);
+                    boolean getMatch = compareGetProducts(existing.getGetProducts(), getList);
+
+                    if (buyMatch && getMatch) {
+                        throw new InvalidCouponException("Duplicate BXGY coupon already exists");
+                    }
                 }
+
                 BxGyCoupon bx = new BxGyCoupon();
                 bx.setCoupon(coupon);
-                bx.setRepetitionLimit(Integer.parseInt(details.get("repition_limit").toString()));
+                bx.setRepetitionLimit(repetitionLimit);
+
+                List<BxGyBuyProduct> buys = new ArrayList<>();
+
+                for (Map<String, Object> map : buyList) {
+
+                    BxGyBuyProduct b = new BxGyBuyProduct();
+                    b.setProductId(Long.valueOf(map.get("product_id").toString()));
+                    b.setQuantity(Integer.parseInt(map.get("quantity").toString()));
+                    b.setBxGyCoupon(bx);
+
+                    buys.add(b);
+                }
+
+                bx.setBuyProducts(buys);
+                List<BxGyGetProduct> gets = new ArrayList<>();
+
+                for (Map<String, Object> map : getList) {
+
+                    BxGyGetProduct g = new BxGyGetProduct();
+                    g.setProductId(Long.valueOf(map.get("product_id").toString()));
+                    g.setQuantity(Integer.parseInt(map.get("quantity").toString()));
+                    g.setBxGyCoupon(bx);
+
+                    gets.add(g);
+                }
+
+                bx.setGetProducts(gets);
+
                 bxgyRepo.save(bx);
+
+                response.setRepetitionLimit(repetitionLimit);
+                response.setBuyProducts(
+                        buyList.stream().map( b -> new ProductQtyDTO(
+                                Long.valueOf(b.get("product_id").toString()),
+                                Integer.parseInt(b.get("quantity").toString())
+                        )).toList()
+                );
+                response.setGetProducts(
+                        getList.stream().map( g -> new ProductQtyDTO(
+                                Long.valueOf(g.get("product_id").toString()),
+                                Integer.parseInt(g.get("quantity").toString())
+                        )).toList()
+                );
+
             }
         }
 
-        return coupon;
+        return response;
     }
 
     /*
@@ -176,10 +251,6 @@ public class CouponServiceImpl implements CouponService {
             existing.setExpiryDate(request.getExpiryDate());
         }
 
-        if (request.getUsageLimit() != null) {
-            existing.setUsageLimit(request.getUsageLimit());
-        }
-
         couponRepo.save(existing);
 
         // ================= UPDATE SUBTYPE =================
@@ -242,9 +313,9 @@ public class CouponServiceImpl implements CouponService {
      * Each coupon is validated using its respective strategy.
      */
     @Override
-    public List<DiscountResponse> applicableCoupons(CartRequest cart) {
+    public ApplicableCouponResponseWrapper applicableCoupons(CartRequestWrapper cartWrapper) {
         List<DiscountResponse> result = new ArrayList<>();
-
+        CartRequest cart = cartWrapper.getCart();
         for (Coupon coupon : couponRepo.findAll()) {
             CouponStrategy strategy = factory.getStrategy(coupon.getType());
             if (strategy.isApplicable(cart, coupon)) {
@@ -253,7 +324,10 @@ public class CouponServiceImpl implements CouponService {
             }
         }
 
-        return result;
+        ApplicableCouponResponseWrapper wrapper = new ApplicableCouponResponseWrapper();
+        wrapper.setApplicableCouponResponses(result);
+
+        return wrapper;
     }
 
     /*
@@ -270,7 +344,8 @@ public class CouponServiceImpl implements CouponService {
      */
     @Transactional
     @Override
-    public CartResponse applyCoupon(Long id, CartRequest cart) {
+    public CartResponseWrapper applyCoupon(Long id, CartRequestWrapper cartWrapper) {
+
 
         Coupon coupon = couponRepo.findById(id)
                 .orElseThrow(() -> new CouponNotFoundException(id));
@@ -281,33 +356,48 @@ public class CouponServiceImpl implements CouponService {
             throw new InvalidCouponException("Coupon expired");
         }
 
-        // Check if coupon usage limit is exhausted
-        if (coupon.getUsageLimit()!=null && coupon.getUsageLimit() <= 0) {
-            throw new InvalidCouponException("Usage limit exceeded");
-        }
+        CartRequest cart = cartWrapper.getCart();
 
         // Fetch correct strategy based on coupon type
         CouponStrategy strategy = factory.getStrategy(coupon.getType());
-
         if (!strategy.isApplicable(cart, coupon)) {
             throw new InvalidCouponException("Coupon not applicable");
         }
 
-        // Calculate total cart amount
-        double total = cart.getItems().stream()
-                .mapToDouble(i -> i.getPrice()*i.getQuantity())
-                .sum();
+        List<CartItemResponse> cartItemResponses = new ArrayList<>();
 
-        // Calculate discount using strategy logic
-        double discount = strategy.calculateDiscount(cart,coupon);
+        double totalPrice=0;
+        double totalDiscount=0;
+        for (CartItem item : cart.getItems()) {
 
-        // Decrement usage limit safely inside transaction
-        if (coupon.getUsageLimit()!=null) {
-            coupon.setUsageLimit(coupon.getUsageLimit() - 1);
-            couponRepo.save(coupon);
+            double itemTotal = item.getPrice() * item.getQuantity();
+            totalPrice += itemTotal;
+
+            double itemDiscount = strategy.calculateDiscount(
+                    new CartRequest(List.of(item)), coupon
+            );
+
+            totalDiscount += itemDiscount;
+
+            cartItemResponses.add(new CartItemResponse(
+                    item.getProductId(),
+                    item.getQuantity(),
+                    item.getPrice(),
+                    itemDiscount
+            ));
         }
 
-        return new CartResponse(total, discount, total-discount);
+        double finalPrice = totalPrice - totalDiscount;
+
+        CartResponse updated = new CartResponse(
+                cartItemResponses,
+                totalPrice,
+                totalDiscount,
+                finalPrice
+        );
+
+        return new CartResponseWrapper(updated);
+
     }
 
     private CouponResponse buildResponse(Coupon coupon) {
@@ -317,7 +407,6 @@ public class CouponServiceImpl implements CouponService {
         res.setId(coupon.getId());
         res.setType(coupon.getType().name());
         res.setExpiryDate(coupon.getExpiryDate());
-        res.setUsageLimit(coupon.getUsageLimit());
 
         switch (coupon.getType()) {
 
@@ -346,5 +435,47 @@ public class CouponServiceImpl implements CouponService {
         }
 
         return res;
+    }
+
+    private boolean compareBuyProducts(List<BxGyBuyProduct> dbList,
+                                       List<Map<String, Object>> reqList) {
+
+        if (dbList.size() != reqList.size()) return false;
+
+        for (Map<String, Object> req : reqList) {
+
+            Long productId = Long.valueOf(req.get("product_id").toString());
+            int qty = Integer.parseInt(req.get("quantity").toString());
+
+            boolean match = dbList.stream().anyMatch(db ->
+                    db.getProductId().equals(productId)
+                            && db.getQuantity() == qty
+            );
+
+            if (!match) return false;
+        }
+
+        return true;
+    }
+
+    private boolean compareGetProducts(List<BxGyGetProduct> dbList,
+                                       List<Map<String, Object>> reqList) {
+
+        if (dbList.size() != reqList.size()) return false;
+
+        for (Map<String, Object> req : reqList) {
+
+            Long productId = Long.valueOf(req.get("product_id").toString());
+            int qty = Integer.parseInt(req.get("quantity").toString());
+
+            boolean match = dbList.stream().anyMatch(db ->
+                    db.getProductId().equals(productId)
+                            && db.getQuantity() == qty
+            );
+
+            if (!match) return false;
+        }
+
+        return true;
     }
 }

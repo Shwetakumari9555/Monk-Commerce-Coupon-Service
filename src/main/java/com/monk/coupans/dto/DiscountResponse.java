@@ -1,5 +1,6 @@
 package com.monk.coupans.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.monk.coupans.entity.CouponType;
 import lombok.AllArgsConstructor;
 import lombok.Data;

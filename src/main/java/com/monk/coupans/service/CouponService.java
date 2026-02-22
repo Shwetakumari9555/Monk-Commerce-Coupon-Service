@@ -1,13 +1,15 @@
 package com.monk.coupans.service;
 
 import com.monk.coupans.dto.*;
-import com.monk.coupans.entity.Coupon;
+import com.monk.coupans.wrapperDto.ApplicableCouponResponseWrapper;
+import com.monk.coupans.wrapperDto.CartRequestWrapper;
+import com.monk.coupans.wrapperDto.CartResponseWrapper;
 
 import java.util.List;
 
 public interface CouponService {
 
-    Coupon createCouponFromRequest(CouponCreateRequest request);
+    CouponResponse createCouponFromRequest(CouponCreateRequest request);
 
     List<CouponResponse> getAllCoupons();
 
@@ -17,7 +19,7 @@ public interface CouponService {
 
     void deleteCoupon(Long id);
 
-    List<DiscountResponse> applicableCoupons(CartRequest cart);
+    ApplicableCouponResponseWrapper applicableCoupons(CartRequestWrapper cart);
 
-    CartResponse applyCoupon(Long id, CartRequest cart);
+    CartResponseWrapper applyCoupon(Long id, CartRequestWrapper cart);
 }

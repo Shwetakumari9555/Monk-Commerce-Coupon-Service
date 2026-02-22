@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 /*
  * Stores configuration for Buy-X-Get-Y coupons.
  * Defines how many times the offer can repeat.
@@ -25,4 +27,10 @@ public class BxGyCoupon {
     @OneToOne
     @JoinColumn(name = "coupon_id", unique = true)
     private Coupon coupon;
+
+    @OneToMany(mappedBy = "bxgyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BxGyBuyProduct> buyProducts;
+
+    @OneToMany(mappedBy = "bxgyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BxGyGetProduct> getProducts;
 }

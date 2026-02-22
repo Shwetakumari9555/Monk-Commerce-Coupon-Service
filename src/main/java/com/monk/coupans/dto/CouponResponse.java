@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -16,10 +17,16 @@ public class CouponResponse {
     private Long id;
     private String type;
     private LocalDateTime expiryDate;
-    private Integer usageLimit;
 
+    // CART
     private Double threshold;
     private Double discount;
+
+    //PRODUCT
     private Long productId;
+
+    //BXGY
     private Integer repetitionLimit;
+    private List<ProductQtyDTO> buyProducts;
+    private List<ProductQtyDTO> getProducts;
 }

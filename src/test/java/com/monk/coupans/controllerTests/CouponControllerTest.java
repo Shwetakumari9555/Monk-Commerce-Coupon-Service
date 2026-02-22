@@ -6,6 +6,8 @@ import com.monk.coupans.dto.*;
 import com.monk.coupans.entity.Coupon;
 import com.monk.coupans.entity.CouponType;
 import com.monk.coupans.service.CouponService;
+import com.monk.coupans.wrapperDto.CartRequestWrapper;
+import com.monk.coupans.wrapperDto.CartResponseWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -33,13 +35,15 @@ class CouponControllerTest {
         request.setType("CART_WISE");
         request.setDetails(Map.of("threshold",100,"discount",10));
 
-        Coupon saved = new Coupon();
+        CouponResponse saved = new CouponResponse();
         saved.setId(1L);
-        saved.setType(CouponType.CART_WISE);
+        saved.setType(String.valueOf(CouponType.CART_WISE));
+        saved.setThreshold(100.00);
+        saved.setDiscount(10.00);
 
         when(service.createCouponFromRequest(request)).thenReturn(saved);
 
-        Coupon response = controller.create(request);
+        CouponResponse response = controller.create(request);
 
         assertEquals(1L, response.getId());
         verify(service).createCouponFromRequest(request);
@@ -81,15 +85,31 @@ class CouponControllerTest {
 
         CartItem item = new CartItem(1L,2,100);
         CartRequest cart = new CartRequest(List.of(item));
+        CartRequestWrapper cartRequestWrapper = new CartRequestWrapper(cart);
 
-        CartResponse response = new CartResponse(200,20,180);
+        CartResponseWrapper cartResponseWrapper = getCartResponseWrapper();
 
-        when(service.applyCoupon(1L, cart)).thenReturn(response);
+        when(service.applyCoupon(1L, cartRequestWrapper)).thenReturn(cartResponseWrapper);
 
-        CartResponse result = controller.apply(1L, cart);
+        CartResponseWrapper result = controller.apply(1L, cartRequestWrapper);
 
-        assertEquals(180, result.getFinalPrice());
-        verify(service).applyCoupon(1L, cart);
+        assertEquals(180, result.getResponse().getFinalPrice());
+        verify(service).applyCoupon(1L, cartRequestWrapper);
+    }
+
+    private static CartResponseWrapper getCartResponseWrapper() {
+        List<CartItemResponse> items = new ArrayList<>();
+        CartItemResponse response = new CartItemResponse();
+        response.setPrice(100);
+        response.setQuantity(2);
+        response.setProductId(1L);
+        response.setTotalDiscount(20);
+        items.add(response);
+
+        CartResponse cartResponse = new CartResponse(items,200,20,180);
+        CartResponseWrapper cartResponseWrapper = new CartResponseWrapper(cartResponse);
+        cartResponseWrapper.setResponse(cartResponse);
+        return cartResponseWrapper;
     }
 
 
