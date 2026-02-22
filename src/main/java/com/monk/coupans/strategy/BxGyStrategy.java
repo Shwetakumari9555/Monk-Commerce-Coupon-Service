@@ -10,6 +10,9 @@ import com.monk.coupans.repository.BxGyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Set;
+
 @Component
 @RequiredArgsConstructor
 public class BxGyStrategy implements CouponStrategy {
@@ -22,6 +25,9 @@ public class BxGyStrategy implements CouponStrategy {
         BxGyCoupon bx = repo.findByCouponId(coupon.getId());
 
         if (bx == null) return false;
+
+        Set<BxGyBuyProduct> buyList = bx.getBuyProducts();
+        if(buyList == null || buyList.isEmpty()) return false;
 
         int totalBuyQty = 0;
 
@@ -38,6 +44,8 @@ public class BxGyStrategy implements CouponStrategy {
                 .mapToInt(BxGyBuyProduct::getQuantity)
                 .sum();
 
+        if(requiredBuyQty == 0) return false;
+
         return totalBuyQty >= requiredBuyQty;
     }
 
@@ -48,6 +56,9 @@ public class BxGyStrategy implements CouponStrategy {
 
         int totalBuyQty = 0;
         int totalGetQty = 0;
+        Set<BxGyBuyProduct> buyList = bx.getBuyProducts();
+        Set<BxGyGetProduct> getList = bx.getGetProducts();
+        if(buyList == null || buyList.isEmpty() || getList == null || getList.isEmpty()) return 0;
 
         for (CartItem item : cart.getItems()) {
 

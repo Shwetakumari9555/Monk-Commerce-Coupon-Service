@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Set;
 
 /*
  * Stores configuration for Buy-X-Get-Y coupons.
@@ -28,9 +29,9 @@ public class BxGyCoupon {
     @JoinColumn(name = "coupon_id", unique = true)
     private Coupon coupon;
 
-    @OneToMany(mappedBy = "bxgyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BxGyBuyProduct> buyProducts;
+    @OneToMany(mappedBy = "bxGyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<BxGyBuyProduct> buyProducts;
 
-    @OneToMany(mappedBy = "bxgyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BxGyGetProduct> getProducts;
+    @OneToMany(mappedBy = "bxGyCoupon", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<BxGyGetProduct> getProducts;
 }

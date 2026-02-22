@@ -19,9 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /*
  * Service implementation containing business logic for coupons.
@@ -113,14 +112,18 @@ public class CouponServiceImpl implements CouponService {
                 List<Map<String, Object>> getList =
                         (List<Map<String, Object>>) details.get("get_products");
 
+                Set<Map<String, Object>> buySet = new HashSet<>(buyList);
+
+                Set<Map<String, Object>> getSet = new HashSet<>(getList);
+
                 List<BxGyCoupon> candidates =
                         bxgyRepo.findByLimitWithProducts(repetitionLimit);
 
 
                 for (BxGyCoupon existing : candidates) {
 
-                    boolean buyMatch = compareBuyProducts(existing.getBuyProducts(), buyList);
-                    boolean getMatch = compareGetProducts(existing.getGetProducts(), getList);
+                    boolean buyMatch = compareBuyProducts(existing.getBuyProducts(), buySet);
+                    boolean getMatch = compareGetProducts(existing.getGetProducts(), getSet);
 
                     if (buyMatch && getMatch) {
                         throw new InvalidCouponException("Duplicate BXGY coupon already exists");
@@ -131,9 +134,9 @@ public class CouponServiceImpl implements CouponService {
                 bx.setCoupon(coupon);
                 bx.setRepetitionLimit(repetitionLimit);
 
-                List<BxGyBuyProduct> buys = new ArrayList<>();
+                Set<BxGyBuyProduct> buys = new HashSet<>();
 
-                for (Map<String, Object> map : buyList) {
+                for (Map<String, Object> map : buySet) {
 
                     BxGyBuyProduct b = new BxGyBuyProduct();
                     b.setProductId(Long.valueOf(map.get("product_id").toString()));
@@ -144,9 +147,9 @@ public class CouponServiceImpl implements CouponService {
                 }
 
                 bx.setBuyProducts(buys);
-                List<BxGyGetProduct> gets = new ArrayList<>();
+                Set<BxGyGetProduct> gets = new HashSet<>();
 
-                for (Map<String, Object> map : getList) {
+                for (Map<String, Object> map : getSet) {
 
                     BxGyGetProduct g = new BxGyGetProduct();
                     g.setProductId(Long.valueOf(map.get("product_id").toString()));
@@ -162,18 +165,17 @@ public class CouponServiceImpl implements CouponService {
 
                 response.setRepetitionLimit(repetitionLimit);
                 response.setBuyProducts(
-                        buyList.stream().map( b -> new ProductQtyDTO(
+                        buySet.stream().map( b -> new ProductQtyDTO(
                                 Long.valueOf(b.get("product_id").toString()),
                                 Integer.parseInt(b.get("quantity").toString())
-                        )).toList()
+                        )).collect(Collectors.toSet())
                 );
                 response.setGetProducts(
-                        getList.stream().map( g -> new ProductQtyDTO(
+                        getSet.stream().map( g -> new ProductQtyDTO(
                                 Long.valueOf(g.get("product_id").toString()),
                                 Integer.parseInt(g.get("quantity").toString())
-                        )).toList()
+                        )).collect(Collectors.toSet())
                 );
-
             }
         }
 
@@ -213,6 +215,16 @@ public class CouponServiceImpl implements CouponService {
                 case BXGY -> {
                     BxGyCoupon bx = bxgyRepo.findByCouponId(coupon.getId());
                     dto.setRepetitionLimit(bx.getRepetitionLimit());
+                    dto.setBuyProducts(
+                            bx.getBuyProducts().stream()
+                                    .map(b -> new ProductQtyDTO(b.getProductId(), b.getQuantity()))
+                                    .collect(Collectors.toSet())
+                    );
+                    dto.setGetProducts(
+                            bx.getGetProducts().stream()
+                                    .map(g -> new ProductQtyDTO(g.getProductId(), g.getQuantity()))
+                                    .collect(Collectors.toSet())
+                    );
                 }
             }
 
@@ -442,8 +454,8 @@ public class CouponServiceImpl implements CouponService {
         return res;
     }
 
-    private boolean compareBuyProducts(List<BxGyBuyProduct> dbList,
-                                       List<Map<String, Object>> reqList) {
+    private boolean compareBuyProducts(Set<BxGyBuyProduct> dbList,
+                                       Set<Map<String, Object>> reqList) {
 
         if (dbList.size() != reqList.size()) return false;
 
@@ -463,8 +475,8 @@ public class CouponServiceImpl implements CouponService {
         return true;
     }
 
-    private boolean compareGetProducts(List<BxGyGetProduct> dbList,
-                                       List<Map<String, Object>> reqList) {
+    private boolean compareGetProducts(Set<BxGyGetProduct> dbList,
+                                       Set<Map<String, Object>> reqList) {
 
         if (dbList.size() != reqList.size()) return false;
 

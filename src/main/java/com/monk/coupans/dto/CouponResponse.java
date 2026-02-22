@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -27,6 +28,6 @@ public class CouponResponse {
 
     //BXGY
     private Integer repetitionLimit;
-    private List<ProductQtyDTO> buyProducts;
-    private List<ProductQtyDTO> getProducts;
+    private Set<ProductQtyDTO> buyProducts;
+    private Set<ProductQtyDTO> getProducts;
 }

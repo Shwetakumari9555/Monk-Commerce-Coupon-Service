@@ -40,6 +40,7 @@ public class Coupon {
 
     // Used for optimistic locking to prevent race conditions
     @Version
+    @Transient
     private Long version;
 
     /*

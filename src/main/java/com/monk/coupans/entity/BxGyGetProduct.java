@@ -7,7 +7,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "bxgy_buy_product")
+@Table(name = "bxgy_get_product")
 public class BxGyGetProduct {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
