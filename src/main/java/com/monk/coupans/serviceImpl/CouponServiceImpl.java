@@ -396,6 +396,11 @@ public class CouponServiceImpl implements CouponService {
                 finalPrice
         );
 
+        coupon.setUsageCount(
+                coupon.getUsageCount() == null ? 1 : coupon.getUsageCount() + 1
+        );
+        couponRepo.save(coupon);
+
         return new CartResponseWrapper(updated);
 
     }
