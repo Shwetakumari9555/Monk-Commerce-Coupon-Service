@@ -162,14 +162,69 @@ public class CouponServiceImpl implements CouponService {
      * Updates coupon expiry or attributes.
      */
     @Override
-    public CouponResponse updateCoupon(Long id, Coupon coupon) {
+    @Transactional
+    public CouponResponse updateCoupon(Long id, CouponCreateRequest request) {
+
         Coupon existing = couponRepo.findById(id)
                 .orElseThrow(() -> new CouponNotFoundException(id));
 
-        existing.setExpiryDate(coupon.getExpiryDate());
-        existing.setUsageLimit(coupon.getUsageLimit());
+        Map<String, Object> details = request.getDetails();
+
+        // ================= UPDATE BASE FIELDS =================
+
+        if (request.getExpiryDate() != null) {
+            existing.setExpiryDate(request.getExpiryDate());
+        }
+
+        if (request.getUsageLimit() != null) {
+            existing.setUsageLimit(request.getUsageLimit());
+        }
 
         couponRepo.save(existing);
+
+        // ================= UPDATE SUBTYPE =================
+
+        switch (existing.getType()) {
+
+            case CART_WISE -> {
+                CartCoupon cart = cartRepo.findByCouponId(existing.getId());
+
+                if (details.containsKey("threshold")) {
+                    cart.setThreshold(Double.parseDouble(details.get("threshold").toString()));
+                }
+
+                if (details.containsKey("discount")) {
+                    cart.setDiscount(Double.parseDouble(details.get("discount").toString()));
+                }
+
+                cartRepo.save(cart);
+            }
+
+            case PRODUCT_WISE -> {
+                ProductCoupon product = productRepo.findByCouponId(existing.getId());
+                if (details.containsKey("product_id")) {
+                    product.setProductId(Long.parseLong(details.get("product_id").toString()));
+                }
+
+                if (details.containsKey("discount")) {
+                    product.setDiscount(Double.parseDouble(details.get("discount").toString()));
+                }
+
+                productRepo.save(product);
+            }
+
+            case BXGY -> {
+                BxGyCoupon bxgy = bxgyRepo.findByCouponId(existing.getId());
+
+                if (details.containsKey("repition_limit")) {
+                    bxgy.setRepetitionLimit(
+                            Integer.parseInt(details.get("repition_limit").toString())
+                    );
+                }
+
+                bxgyRepo.save(bxgy);
+            }
+        }
 
         return buildResponse(existing);
     }

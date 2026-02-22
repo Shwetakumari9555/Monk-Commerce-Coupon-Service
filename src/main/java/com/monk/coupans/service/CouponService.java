@@ -13,7 +13,7 @@ public interface CouponService {
 
     CouponResponse getCoupon(Long id);
 
-    CouponResponse updateCoupon(Long id, Coupon coupon);
+    CouponResponse updateCoupon(Long id, CouponCreateRequest coupon);
 
     void deleteCoupon(Long id);
 

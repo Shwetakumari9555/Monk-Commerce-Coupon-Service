@@ -46,7 +46,7 @@ public class CouponController {
      * Updates expiry date or other coupon attributes.
      */
     @PutMapping("/{id}")
-    public CouponResponse update(@PathVariable Long id, @RequestBody Coupon coupon) {
+    public CouponResponse update(@PathVariable Long id, @RequestBody CouponCreateRequest coupon) {
         return service.updateCoupon(id, coupon);
     }
 

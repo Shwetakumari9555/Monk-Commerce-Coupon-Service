@@ -331,6 +331,19 @@ curl -X DELETE http://localhost:8080/coupons/1
 
 ---
 
+### Update Coupon
+
+curl --location --request PUT 'http://localhost:8080/coupons/5' \
+--header 'Content-Type: application/json' \
+--data '{
+"type": "BXGY",
+"details": {
+"repition_limit": 6
+}
+}'
+
+---
+
 ### Get Applicable Coupons
 
 curl -X POST http://localhost:8080/coupons/applicableCoupons \
