@@ -1,211 +1,375 @@
 # Monk-Commerce-Coupon-Service
 Production-ready Coupon Management API built with Spring Boot (Java 21).  Supports Cart-Wise, Product-Wise, and Buy-X-Get-Y coupons using Strategy Pattern for extensibility.  Designed to handle real-world coupon scenarios with clean architecture, SOLID principles, and scalable design.
 
-# Coupons Management API — Monk Commerce Assignment
-
-## Project Overview
-
-This project implements a **Coupon Management System** using **Spring Boot and Java 21**.
-
-The system supports multiple coupon types and applies discounts dynamically to a shopping cart.
-
-It is designed with:
-
-* Clean architecture
-* Normalized database schema
-* Strategy design pattern
-* Concurrency handling
-* Extensible coupon types
+# 🧾 Coupons Management API
+### Monk Commerce Backend Assignment — Spring Boot (Java 21)
 
 ---
 
-## Coupon Types Supported
+## 📌 Overview
+
+This project implements a **Coupon Management System** that supports multiple discount types and applies them dynamically to a shopping cart.
+
+The solution is designed with:
+
+- Clean layered architecture
+- Strategy design pattern
+- Normalized database schema
+- Concurrency-safe coupon usage
+- Real-world business rule handling
+
+---
+
+## 🏗️ Architecture Diagram
+
+![Architecture Diagram](docs/overview.png)
+
+---
+
+## 🔄 System Flow
+
+Client (Postman / UI)  
+↓  
+Controller Layer  
+↓  
+Service Layer (Business Logic)  
+↓  
+Strategy Factory  
+↓  
+Coupon Strategy (Cart / Product / BXGY)  
+↓  
+Repository Layer (JPA)  
+↓  
+Database Tables
+
+---
+
+## 🛠️ Tech Stack
+
+Java 21  
+Spring Boot  
+Spring Data JPA (Hibernate)  
+MySQL / H2 Database  
+Lombok  
+JUnit + Mockito
+
+---
+
+## 🎯 Supported Coupon Types
 
 ### Cart-Wise Coupon
+Applies discount to entire cart if total exceeds a threshold.
 
-Applies discount if cart total exceeds threshold.
-
-Example:
-
-* Spend ₹100 → Get 10% discount
+Example:  
+Spend ₹100 → Get 10% off
 
 ---
 
 ### Product-Wise Coupon
-
 Applies discount only to specific products.
 
-Example:
-
-* Product ID = 5 → 20% discount
+Example:  
+Product ID 5 → 20% discount
 
 ---
 
-### Buy-X-Get-Y Coupon
-
+### Buy-X-Get-Y (BXGY) Coupon
 Provides free items based on purchase quantity.
 
-Example:
-
-* Buy 3 → Get 1 free
-
----
-
-## Default Business Rules
-
-If not provided:
-
-* Expiry Date = 1 month from creation
-* Usage Limit = 20 uses
+Example:  
+Buy 3 items → Get 1 free
 
 ---
 
-## System Flow Diagram
+## ⭐ Default Business Rules
 
-```
-User Request
-      ↓
-Controller Layer
-      ↓
-Service Layer
-      ↓
-Strategy Factory
-      ↓
-Coupon Strategy (Cart/Product/BxGy)
-      ↓
-Repositories
-      ↓
-Database Tables
-```
+If not provided during creation:
+
+Expiry Date → 1 month from creation date  
+Usage Limit → 20 uses
+
+Defaults are handled automatically using JPA lifecycle callback (`@PrePersist`).
 
 ---
 
-## Database Schema Design
-
-Tables:
-
-* coupon
-* cart_coupon
-* product_coupon
-* bxgy_coupon
-
-This avoids NULL columns and ensures clean separation.
+### Duplicate Coupon Validation
+- Prevents creation of duplicate coupons:
+    - Same threshold & discount for cart-wise.
+    - Same productId & discount for product-wise.
+    - Same repetition limit for BXGY.
+    - 
+Ensures database integrity and avoids redundant rules.
 
 ---
 
-## Setting Up Database (Simple Steps)
+## 🔐 Concurrency Handling
 
-1. Install MySQL
-2. Create a database:
+The system uses **Optimistic Locking (`@Version`)** to prevent:
 
-```
+- Multiple users applying the same coupon simultaneously
+- Negative usage limits
+- Race conditions during updates
+
+---
+
+## 🗄️ Database Design
+
+Each coupon type has its own table:
+
+coupon → Base coupon info  
+cart_coupon → Cart-wise rules  
+product_coupon → Product-wise rules  
+bxgy_coupon → BXGY rules
+
+This ensures:
+
+- No NULL columns
+- Clean separation of data
+- Easy extensibility
+
+---
+
+## 🚀 API Endpoints
+
+### Coupon CRUD APIs
+
+POST /coupons → Create coupon  
+GET /coupons → Get all coupons  
+GET /coupons/{id} → Get coupon by ID  
+PUT /coupons/{id} → Update coupon  
+DELETE /coupons/{id} → Delete coupon
+
+---
+
+### Coupon Application APIs
+
+POST /coupons/applicable-coupons → Get applicable coupons  
+POST /coupons/apply-coupon/{id} → Apply coupon
+
+---
+
+## 🧪 Example Request Payloads
+
+Create Cart-Wise Coupon:
+
+{
+"type": "CART_WISE",
+"details": {
+"threshold": 100,
+"discount": 10
+}
+}
+
+Create Product-Wise Coupon:
+
+{
+"type": "PRODUCT_WISE",
+"details": {
+"product_id": 1,
+"discount": 20
+}
+}
+
+Create BXGY Coupon:
+
+{
+"type": "BXGY",
+"details": {
+"repition_limit": 2
+}
+}
+
+---
+
+## ✅ Implemented Use Cases
+
+Coupon creation for all types  
+Default expiry and usage handling  
+Duplicate rule prevention  
+Fetching coupons with subtype details  
+Discount calculation logic  
+Expiry and usage validation  
+Concurrency-safe coupon application  
+Error handling
+
+---
+
+## ⚠️ Edge Cases Considered
+
+Empty cart  
+Invalid quantity or price  
+Coupon applied to wrong product  
+Cart below threshold  
+Multiple applicable coupons  
+Concurrent coupon usage
+
+---
+
+## 📌 Assumptions
+
+Each coupon belongs to only one type  
+Each coupon has exactly one subtype record  
+Only one coupon applied at a time  
+Product IDs in cart are valid
+
+---
+
+## ❗ Limitations
+
+No coupon stacking logic  
+No user-specific coupon rules  
+No distributed caching  
+Simplified BXGY calculation
+
+---
+
+## 🔮 Future Enhancements
+
+Coupon stacking support  
+Category-based coupons  
+User-specific coupons  
+Analytics dashboard  
+Caching layer
+
+---
+
+## 🛠️ Database Setup (Simple Steps)
+
+Step 1 — Install MySQL
+
+Step 2 — Create database:
+
 CREATE DATABASE coupon_db;
-```
 
-3. Update application.properties:
+Step 3 — Configure application.properties:
 
-```
-spring.datasource.url=jdbc:mysql://localhost:3306/coupon_db
-spring.datasource.username=root
-spring.datasource.password=yourpassword
+spring.datasource.url=jdbc:mysql://localhost:3306/coupon_db  
+spring.datasource.username=root  
+spring.datasource.password=yourpassword  
 spring.jpa.hibernate.ddl-auto=update
-```
 
-4. Run the application — tables will be created automatically.
+Step 4 — Run application:
+
+mvn spring-boot:run
+
+Tables will be created automatically.
 
 ---
 
-## Monitoring Database Easily
+## 👀 Monitoring Database Easily
 
 You can use:
 
-* MySQL Workbench
-* DBeaver
-* phpMyAdmin
+MySQL Workbench  
+DBeaver  
+phpMyAdmin
 
-These tools allow you to:
-
-* View tables
-* Check stored coupons
-* Monitor usage limits
-* Verify discount data
+These tools allow you to view tables and monitor coupon usage.
 
 ---
 
-## How to Test APIs Using Postman
+## 🧪 How to Test APIs Using Postman
 
-1. Start Spring Boot application
-2. Open Postman
-3. Use base URL:
+Start the application.
 
-```
+Base URL:
+
 http://localhost:8080
-```
-
-4. Test endpoints:
-
-* POST /coupons
-* GET /coupons
-* POST /coupons/apply-coupon/{id}
-
-Import cURL commands into Postman for quick testing.
 
 ---
 
-## Error Handling Covered
+## 🔧 cURL Commands for Testing APIs
 
-* Invalid coupon type
-* Coupon not found
-* Coupon expired
-* Usage limit exceeded
-* Invalid cart input
+### Create Cart-Wise Coupon
 
----
-
-## Concurrency Handling
-
-Optimistic locking using `@Version` ensures:
-
-* No duplicate usage
-* Safe updates
-* Race condition prevention
+curl -X POST http://localhost:8080/coupons \
+-H "Content-Type: application/json" \
+-d '{
+"type":"CART_WISE",
+"details":{"threshold":100,"discount":10}
+}'
 
 ---
 
-## Unit Testing
+### Create Product-Wise Coupon
 
-JUnit + Mockito tests cover:
-
-* Coupon creation
-* Discount application
-* Expiry validation
-* Usage limit checks
+curl -X POST http://localhost:8080/coupons \
+-H "Content-Type: application/json" \
+-d '{
+"type":"PRODUCT_WISE",
+"details":{"product_id":1,"discount":20}
+}'
 
 ---
 
-## How to Run the Project
+### Create BXGY Coupon
 
-```
+curl -X POST http://localhost:8080/coupons \
+-H "Content-Type: application/json" \
+-d '{
+"type":"BXGY",
+"details":{"repition_limit":2}
+}'
+
+---
+
+### Get All Coupons
+
+curl http://localhost:8080/coupons
+
+---
+
+### Get Coupon By ID
+
+curl http://localhost:8080/coupons/1
+
+---
+
+### Delete Coupon
+
+curl -X DELETE http://localhost:8080/coupons/1
+
+---
+
+### Get Applicable Coupons
+
+curl -X POST http://localhost:8080/coupons/applicable-coupons \
+-H "Content-Type: application/json" \
+-d '{
+"items":[{"productId":1,"quantity":3,"price":50}]
+}'
+
+---
+
+### Apply Coupon
+
+curl -X POST http://localhost:8080/coupons/apply-coupon/1 \
+-H "Content-Type: application/json" \
+-d '{
+"items":[{"productId":1,"quantity":3,"price":50}]
+}'
+
+---
+
+## 🧪 Testing Included
+
+JUnit + Mockito unit tests  
+Controller tests using Mockito  
+Validation and concurrency tests
+
+---
+
+## ▶️ Running the Project
+
+mvn clean install  
 mvn spring-boot:run
-```
 
-Server starts at:
+Server runs at:
 
-```
 http://localhost:8080
-```
 
 ---
 
-## Future Enhancements
+## 🏁 Conclusion
 
-* Coupon stacking
-* Category based coupons
-* User specific coupons
-* Real-time analytics
-
----
-
-## Conclusion
-
-This system provides a scalable and production-ready coupon engine capable of handling diverse discount scenarios efficiently.
+This implementation delivers a robust, scalable, and production-ready coupon management system capable of handling multiple discount scenarios efficiently while ensuring data consistency and extensibility.

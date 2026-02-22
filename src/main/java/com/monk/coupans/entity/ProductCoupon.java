@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/*
+ * Stores configuration for Product-Wise coupons.
+ * Applies discount only to specific products.
+ */
 @Entity
 @Getter
 @Setter
@@ -14,9 +18,11 @@ public class ProductCoupon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Product ID eligible for discount
     @Column(nullable = false)
     private Long productId;
 
+    // Discount percentage applied to the product
     @Column(nullable = false)
     private double discount;
 

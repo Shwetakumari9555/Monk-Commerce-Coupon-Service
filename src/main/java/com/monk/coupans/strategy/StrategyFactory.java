@@ -4,6 +4,12 @@ import com.monk.coupans.entity.CouponType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/*
+ * Factory class responsible for returning the correct
+ * coupon strategy implementation based on coupon type.
+ *
+ * Helps follow Open-Closed Principle.
+ */
 @Component
 @RequiredArgsConstructor
 public class StrategyFactory {

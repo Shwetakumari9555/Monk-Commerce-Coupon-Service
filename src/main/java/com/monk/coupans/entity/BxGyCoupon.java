@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/*
+ * Stores configuration for Buy-X-Get-Y coupons.
+ * Defines how many times the offer can repeat.
+ */
 @Entity
 @Getter
 @Setter
@@ -14,6 +18,7 @@ public class BxGyCoupon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Maximum number of times free items can be granted
     @Column(nullable = false)
     private int repetitionLimit;
 
