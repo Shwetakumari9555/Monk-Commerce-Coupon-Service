@@ -424,4 +424,4 @@ curl -X POST http://localhost:8080/coupons/apply-coupon/1 \
 
 This implementation provides a scalable and maintainable coupon management system capable of handling real-world discount scenarios efficiently while ensuring data consistency and extensibility.
 
----lementation delivers a robust, scalable, and production-ready coupon management system capable of handling multiple discount scenarios efficiently while ensuring data consistency and extensibility.
+Implementation delivers a robust, scalable, and production-ready coupon management system capable of handling multiple discount scenarios efficiently while ensuring data consistency and extensibility.
